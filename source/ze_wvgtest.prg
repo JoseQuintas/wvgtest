@@ -115,7 +115,7 @@ CREATE CLASS wvgTstCombobox INHERIT wvgtstControl
    METHOD AddItem( cText )   INLINE ::SendMessage( CB_ADDSTRING, 0, cText )
    METHOD SetValue( nIndex ) INLINE ::SendMessage( CB_SETCURSEL, nIndex - 1, 0 )
    METHOD GetValue()         INLINE ::SendMessage( CB_GETCURSEL, 0, 0 )
-   METHOD GetText( nIndex )  INLINE ::SendMessage( CB_GETLBTEXT, nIndex - 1, 0 )
+   METHOD GetText( nIndex )  INLINE wvgTstCB_GetText( ::hWnd, nIndex )
    METHOD Clear()            INLINE ::SendMessage( CB_RESETCONTENT, 0, 0 )
 
    ENDCLASS
@@ -413,7 +413,7 @@ CREATE CLASS wvgTstUpDown INHERIT wvgtstControl
 METHOD wvgTstUpDown:SetValues( nValue, nRangeMin, nRangeMax )
 
    IF HB_ISNUMERIC( nRangeMin ) .AND. HB_ISNUMERIC( nRangeMax )
-      ::SendMessage( UDM_SETRANGE, 0, WIN_MAKELONG( nRangeMin, nRangeMax ) )
+      ::SendMessage( UDM_SETRANGE, 0, WIN_MAKELONG( nRangeMax, nRangeMin ) ) // low = max, high = min
    ENDIF
    IF HB_ISNUMERIC( nValue )
       ::SendMessage( UDM_SETPOS, 0, nValue )
@@ -610,13 +610,13 @@ METHOD wvgTstControl:handleEvent( nMessage, aNM )
    CASE nMessage == HB_GTE_CTLCOLOR
       // error on harbour 3.2
       IF HB_ISNUMERIC( ::clr_FG )
-         wvg_SetTextColor( ::hWnd, ::clr_FG )
+         wvg_SetTextColor( aNM[ 1 ], ::clr_FG )
       ENDIF
       IF Empty( ::hBrushBG )
          RETURN wvg_GetCurrentBrush( ::hWnd )
       ELSE
          IF ::ClassName != "SCROLLBAR"
-            wvg_SetBkMode( ::hWnd, WIN_TRANSPARENT )
+            wvg_SetBkMode( aNM[ 1 ], WIN_TRANSPARENT )
          ENDIF
          RETURN ::hBrushBG
       ENDIF
@@ -668,6 +668,7 @@ METHOD wvgTstControl:SetImage()
 
    LOCAL nWidth, nHeight //, hOldImage
    LOCAL nLoadFromResByIdName   := 1
+   LOCAL nImageType := iif( ::nIconBitmap == WIN_IMAGE_ICON, IMAGE_ICON, IMAGE_BITMAP )
 
    IF ::cImage != NIL .AND. ( ::nIconBitmap == WIN_IMAGE_ICON .OR. ::nIconBitmap == WIN_IMAGE_BITMAP )
       IF ::lImageResize
@@ -675,8 +676,8 @@ METHOD wvgTstControl:SetImage()
          nHeight := ::CurrentSize()[ 2 ]
       ENDIF
       // BM_SETIMAGE on button, STM_SETIMAGE on others, limited to resource by name
-      wvg_SendMessage( ::hWnd, iif( ::ClassName == "BUTTON", BM_SETIMAGE, STM_SETIMAGE ), IMAGE_ICON, ;
-         wvg_LoadImage( ::cImage, nLoadFromResByIdName, IMAGE_ICON, nWidth, nHeight ) )
+      wvg_SendMessage( ::hWnd, iif( ::ClassName == "BUTTON", BM_SETIMAGE, STM_SETIMAGE ), nImageType, ;
+         wvg_LoadImage( ::cImage, nLoadFromResByIdName, nImageType, nWidth, nHeight ) )
       //::SendMessage( STM_SETIMAGE, ::nIconBitmap, AppLoadImage( ::cImage, nWidth, nHeight ) )
       ::InvalidateRect()
    ENDIF
@@ -753,3 +754,11 @@ METHOD zeWvgIcon:SetIcon( cIcon )
 
    RETURN Nil
 */
+
+STATIC FUNCTION wvgTstCB_GetText( hWnd, nIndex )
+
+   LOCAL cText := Space( wvg_SendMessage( hWnd, CB_GETLBTEXTLEN, nIndex - 1, 0 ) + 1 )
+
+   wvg_SendMessage( hWnd, CB_GETLBTEXT, nIndex - 1, @cText )
+
+   RETURN cText
