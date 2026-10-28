@@ -41,8 +41,8 @@ METHOD wvgTstPushButton:setCaption( xCaption, cDll )
       IF ! Empty( xCaption[ 2 ] )
          aSize := ::CurrentSize()
          IF ::lImageSizeMax
-            nWidth := aSize[1] // aSize[ 1 ] - 8
-            nHeight := aSize[2] // aSize[ 2 ] - wvt_GetFontInfo()[ 6 ] - 8
+            nWidth := aSize[ 1 ] - 8 // aSize[1]
+            nHeight := aSize[ 2 ] - wvt_GetFontInfo()[ 6 ] - 8 // aSize[2]
          ELSE
             nWidth  := Min( aSize[1], aSize[2] ) / 2
             nHeight := nWidth
